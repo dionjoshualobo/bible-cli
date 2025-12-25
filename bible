@@ -2,18 +2,140 @@
 
 import xml.etree.ElementTree as ET
 import random
+import argparse
+import sys
 from pathlib import Path
+from difflib import get_close_matches
 
 BASE_DIR = Path(__file__).resolve().parent
 FILE_PATH = BASE_DIR / "bible.xml"
 
-def get_random_verse(file_path):
+# Standard Bible book abbreviations mapping
+BOOK_ABBREVIATIONS = {
+    # Old Testament
+    'gen': 'Genesis', 'gn': 'Genesis', 'genesis': 'Genesis',
+    'ex': 'Exodus', 'exo': 'Exodus', 'exod': 'Exodus', 'exodus': 'Exodus',
+    'lev': 'Leviticus', 'lv': 'Leviticus', 'leviticus': 'Leviticus',
+    'num': 'Numbers', 'nm': 'Numbers', 'numb': 'Numbers', 'numbers': 'Numbers',
+    'deut': 'Deuteronomy', 'dt': 'Deuteronomy', 'deu': 'Deuteronomy', 'deuteronomy': 'Deuteronomy',
+    'josh': 'Joshua', 'js': 'Joshua', 'jos': 'Joshua', 'joshua': 'Joshua',
+    'judg': 'Judges', 'jud': 'Judges', 'jdg': 'Judges', 'judges': 'Judges',
+    'ruth': 'Ruth', 'rt': 'Ruth', 'rut': 'Ruth',
+    '1sam': '1 Samuel', '1sm': '1 Samuel', '1 sam': '1 Samuel', '1 samuel': '1 Samuel',
+    '2sam': '2 Samuel', '2sm': '2 Samuel', '2 sam': '2 Samuel', '2 samuel': '2 Samuel',
+    '1kgs': '1 Kings', '1ki': '1 Kings', '1 kings': '1 Kings', '1 kgs': '1 Kings',
+    '2kgs': '2 Kings', '2ki': '2 Kings', '2 kings': '2 Kings', '2 kgs': '2 Kings',
+    '1chr': '1 Chronicles', '1ch': '1 Chronicles', '1 chronicles': '1 Chronicles', '1 chr': '1 Chronicles',
+    '2chr': '2 Chronicles', '2ch': '2 Chronicles', '2 chronicles': '2 Chronicles', '2 chr': '2 Chronicles',
+    'ezra': 'Ezra', 'ezr': 'Ezra',
+    'neh': 'Nehemiah', 'ne': 'Nehemiah', 'nehemiah': 'Nehemiah',
+    'esth': 'Esther', 'et': 'Esther', 'est': 'Esther', 'esther': 'Esther',
+    'job': 'Job',
+    'ps': 'Psalms', 'psa': 'Psalms', 'psalm': 'Psalms', 'psalms': 'Psalms',
+    'prov': 'Proverbs', 'prv': 'Proverbs', 'pro': 'Proverbs', 'proverbs': 'Proverbs',
+    'eccl': 'Ecclesiastes', 'ec': 'Ecclesiastes', 'ecc': 'Ecclesiastes', 'ecclesiastes': 'Ecclesiastes',
+    'song': 'Song of Solomon', 'so': 'Song of Solomon', 'sos': 'Song of Solomon', 'song of solomon': 'Song of Solomon',
+    'isa': 'Isaiah', 'is': 'Isaiah', 'isaiah': 'Isaiah',
+    'jer': 'Jeremiah', 'jr': 'Jeremiah', 'jeremiah': 'Jeremiah',
+    'lam': 'Lamentations', 'lm': 'Lamentations', 'lamentations': 'Lamentations',
+    'ezek': 'Ezekiel', 'ez': 'Ezekiel', 'eze': 'Ezekiel', 'ezekiel': 'Ezekiel',
+    'dan': 'Daniel', 'dn': 'Daniel', 'daniel': 'Daniel',
+    'hos': 'Hosea', 'ho': 'Hosea', 'hosea': 'Hosea',
+    'joel': 'Joel', 'jl': 'Joel', 'joe': 'Joel',
+    'amos': 'Amos', 'am': 'Amos',
+    'obad': 'Obadiah', 'ob': 'Obadiah', 'oba': 'Obadiah', 'obadiah': 'Obadiah',
+    'jonah': 'Jonah', 'jn': 'Jonah', 'jon': 'Jonah',
+    'mic': 'Micah', 'mi': 'Micah', 'micah': 'Micah',
+    'nah': 'Nahum', 'na': 'Nahum', 'nahum': 'Nahum',
+    'hab': 'Habakkuk', 'hk': 'Habakkuk', 'habakkuk': 'Habakkuk',
+    'zeph': 'Zephaniah', 'zp': 'Zephaniah', 'zep': 'Zephaniah', 'zephaniah': 'Zephaniah',
+    'hag': 'Haggai', 'hg': 'Haggai', 'haggai': 'Haggai',
+    'zech': 'Zechariah', 'zc': 'Zechariah', 'zec': 'Zechariah', 'zechariah': 'Zechariah',
+    'mal': 'Malachi', 'ml': 'Malachi', 'malachi': 'Malachi',
+    # New Testament
+    'matt': 'Matthew', 'mt': 'Matthew', 'mat': 'Matthew', 'matthew': 'Matthew',
+    'mark': 'Mark', 'mk': 'Mark', 'mar': 'Mark',
+    'luke': 'Luke', 'lk': 'Luke', 'luk': 'Luke',
+    'john': 'John', 'jo': 'John', 'joh': 'John', 'jn': 'John',
+    'acts': 'Acts', 'act': 'Acts', 'ac': 'Acts',
+    'rom': 'Romans', 'rm': 'Romans', 'romans': 'Romans',
+    '1cor': '1 Corinthians', '1co': '1 Corinthians', '1 corinthians': '1 Corinthians', '1 cor': '1 Corinthians',
+    '2cor': '2 Corinthians', '2co': '2 Corinthians', '2 corinthians': '2 Corinthians', '2 cor': '2 Corinthians',
+    'gal': 'Galatians', 'gl': 'Galatians', 'galatians': 'Galatians',
+    'eph': 'Ephesians', 'ephesians': 'Ephesians',
+    'phil': 'Philippians', 'ph': 'Philippians', 'php': 'Philippians', 'philippians': 'Philippians',
+    'col': 'Colossians', 'cl': 'Colossians', 'colossians': 'Colossians',
+    '1thess': '1 Thessalonians', '1ts': '1 Thessalonians', '1th': '1 Thessalonians', '1 thessalonians': '1 Thessalonians', '1 thess': '1 Thessalonians',
+    '2thess': '2 Thessalonians', '2ts': '2 Thessalonians', '2th': '2 Thessalonians', '2 thessalonians': '2 Thessalonians', '2 thess': '2 Thessalonians',
+    '1tim': '1 Timothy', '1tm': '1 Timothy', '1ti': '1 Timothy', '1 timothy': '1 Timothy', '1 tim': '1 Timothy',
+    '2tim': '2 Timothy', '2tm': '2 Timothy', '2ti': '2 Timothy', '2 timothy': '2 Timothy', '2 tim': '2 Timothy',
+    'titus': 'Titus', 'tt': 'Titus', 'tit': 'Titus',
+    'philem': 'Philemon', 'phm': 'Philemon', 'phlm': 'Philemon', 'philemon': 'Philemon',
+    'heb': 'Hebrews', 'hb': 'Hebrews', 'hebrews': 'Hebrews',
+    'james': 'James', 'jm': 'James', 'jas': 'James', 'jam': 'James',
+    '1pet': '1 Peter', '1pe': '1 Peter', '1pt': '1 Peter', '1 peter': '1 Peter', '1 pet': '1 Peter',
+    '2pet': '2 Peter', '2pe': '2 Peter', '2pt': '2 Peter', '2 peter': '2 Peter', '2 pet': '2 Peter',
+    '1john': '1 John', '1jo': '1 John', '1jn': '1 John', '1 john': '1 John',
+    '2john': '2 John', '2jo': '2 John', '2jn': '2 John', '2 john': '2 John',
+    '3john': '3 John', '3jo': '3 John', '3jn': '3 John', '3 john': '3 John',
+    'jude': 'Jude', 'jd': 'Jude', 'jud': 'Jude',
+    'rev': 'Revelation', 're': 'Revelation', 'revelation': 'Revelation',
+}
+
+def get_book_names():
+    """Get list of unique book names."""
+    return sorted(list(set(BOOK_ABBREVIATIONS.values())))
+
+def normalize_book_name(book_input):
+    """Normalize and find the full book name from user input."""
+    if not book_input:
+        return None
+    
+    # Normalize input: lowercase and remove spaces
+    normalized = book_input.lower().strip().replace(' ', '')
+    
+    # Direct lookup
+    if normalized in BOOK_ABBREVIATIONS:
+        return BOOK_ABBREVIATIONS[normalized]
+    
+    # Try with space variations
+    if book_input.lower().strip() in [k for k in BOOK_ABBREVIATIONS.keys()]:
+        return BOOK_ABBREVIATIONS[book_input.lower().strip()]
+    
+    return None
+
+def find_similar_books(book_input):
+    """Find similar book names for suggestions."""
+    all_names = list(BOOK_ABBREVIATIONS.keys())
+    all_names.extend(get_book_names())
+    
+    # Normalize input
+    normalized = book_input.lower().strip()
+    
+    # Get close matches
+    matches = get_close_matches(normalized, all_names, n=1, cutoff=0.6)
+    
+    if matches:
+        match = matches[0]
+        if match in BOOK_ABBREVIATIONS:
+            return BOOK_ABBREVIATIONS[match]
+        return match
+    
+    return None
+
+def get_verses(file_path, book_filter=None):
+    """Get verses, optionally filtered by book."""
     tree = ET.parse(file_path)
     root = tree.getroot()
 
     verses = []
     for book in root.findall('b'):
         book_name = book.get('n')
+        
+        # Apply book filter if specified
+        if book_filter and book_name != book_filter:
+            continue
+            
         for chapter in book.findall('c'):
             chapter_num = chapter.get('n')
             for verse in chapter.findall('v'):
@@ -22,9 +144,153 @@ def get_random_verse(file_path):
                     verses.append(
                         (book_name, chapter_num, verse_num, verse.text.strip())
                     )
+    
+    return verses
 
+def get_random_verse(file_path, book_filter=None):
+    """Get a random verse, optionally from a specific book."""
+    verses = get_verses(file_path, book_filter)
+    
+    if not verses:
+        return None
+    
     book, ch, v, text = random.choice(verses)
     return f"{book} {ch}:{v} — {text}"
 
+def print_help():
+    """Print help message with book names and abbreviations."""
+    print("Bible CLI - Get random verses from the Bible")
+    print("\nUsage:")
+    print("  bible              Get a random verse from any book")
+    print("  bible -b BOOK      Get a random verse from a specific book")
+    print("  bible --book=BOOK  Get a random verse from a specific book")
+    print("  bible -h           Show this help message")
+    print("\nExamples:")
+    print("  bible -b Genesis")
+    print("  bible -b Gen")
+    print("  bible --book=Psalms")
+    print("  bible -b Ps")
+    print("\nAvailable Books and Their Abbreviations:")
+    print("\nOld Testament:")
+    ot_books = [
+        ('Genesis', 'Gen, Gn'),
+        ('Exodus', 'Ex, Exo, Exod'),
+        ('Leviticus', 'Lev, Lv'),
+        ('Numbers', 'Num, Nm, Numb'),
+        ('Deuteronomy', 'Deut, Dt, Deu'),
+        ('Joshua', 'Josh, Js, Jos'),
+        ('Judges', 'Judg, Jud, Jdg'),
+        ('Ruth', 'Rt, Rut'),
+        ('1 Samuel', '1Sam, 1Sm, 1 Sam'),
+        ('2 Samuel', '2Sam, 2Sm, 2 Sam'),
+        ('1 Kings', '1Kgs, 1Ki, 1 Kgs'),
+        ('2 Kings', '2Kgs, 2Ki, 2 Kgs'),
+        ('1 Chronicles', '1Chr, 1Ch, 1 Chr'),
+        ('2 Chronicles', '2Chr, 2Ch, 2 Chr'),
+        ('Ezra', 'Ezr'),
+        ('Nehemiah', 'Neh, Ne'),
+        ('Esther', 'Esth, Et, Est'),
+        ('Job', 'Job'),
+        ('Psalms', 'Ps, Psa, Psalm'),
+        ('Proverbs', 'Prov, Prv, Pro'),
+        ('Ecclesiastes', 'Eccl, Ec, Ecc'),
+        ('Song of Solomon', 'Song, So, SoS'),
+        ('Isaiah', 'Isa, Is'),
+        ('Jeremiah', 'Jer, Jr'),
+        ('Lamentations', 'Lam, Lm'),
+        ('Ezekiel', 'Ezek, Ez, Eze'),
+        ('Daniel', 'Dan, Dn'),
+        ('Hosea', 'Hos, Ho'),
+        ('Joel', 'Jl, Joe'),
+        ('Amos', 'Am'),
+        ('Obadiah', 'Obad, Ob, Oba'),
+        ('Jonah', 'Jn, Jon'),
+        ('Micah', 'Mic, Mi'),
+        ('Nahum', 'Nah, Na'),
+        ('Habakkuk', 'Hab, Hk'),
+        ('Zephaniah', 'Zeph, Zp, Zep'),
+        ('Haggai', 'Hag, Hg'),
+        ('Zechariah', 'Zech, Zc, Zec'),
+        ('Malachi', 'Mal, Ml'),
+    ]
+    
+    for book, abbrev in ot_books:
+        print(f"  {book:<20} ({abbrev})")
+    
+    print("\nNew Testament:")
+    nt_books = [
+        ('Matthew', 'Matt, Mt, Mat'),
+        ('Mark', 'Mk, Mar'),
+        ('Luke', 'Lk, Luk'),
+        ('John', 'Jo, Joh, Jn'),
+        ('Acts', 'Act, Ac'),
+        ('Romans', 'Rom, Rm'),
+        ('1 Corinthians', '1Cor, 1Co, 1 Cor'),
+        ('2 Corinthians', '2Cor, 2Co, 2 Cor'),
+        ('Galatians', 'Gal, Gl'),
+        ('Ephesians', 'Eph'),
+        ('Philippians', 'Phil, Ph, Php'),
+        ('Colossians', 'Col, Cl'),
+        ('1 Thessalonians', '1Thess, 1Ts, 1Th, 1 Thess'),
+        ('2 Thessalonians', '2Thess, 2Ts, 2Th, 2 Thess'),
+        ('1 Timothy', '1Tim, 1Tm, 1Ti, 1 Tim'),
+        ('2 Timothy', '2Tim, 2Tm, 2Ti, 2 Tim'),
+        ('Titus', 'Tt, Tit'),
+        ('Philemon', 'Philem, Phm, Phlm'),
+        ('Hebrews', 'Heb, Hb'),
+        ('James', 'Jm, Jas, Jam'),
+        ('1 Peter', '1Pet, 1Pe, 1Pt, 1 Pet'),
+        ('2 Peter', '2Pet, 2Pe, 2Pt, 2 Pet'),
+        ('1 John', '1Jo, 1Jn, 1 John'),
+        ('2 John', '2Jo, 2Jn, 2 John'),
+        ('3 John', '3Jo, 3Jn, 3 John'),
+        ('Jude', 'Jd, Jud'),
+        ('Revelation', 'Rev, Re'),
+    ]
+    
+    for book, abbrev in nt_books:
+        print(f"  {book:<20} ({abbrev})")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Bible CLI - Get random verses from the Bible',
+        add_help=False  # We'll handle help ourselves
+    )
+    parser.add_argument('-b', '--book', type=str, help='Specify a book to get verses from')
+    parser.add_argument('-h', '--help', action='store_true', help='Show help message')
+    
+    args = parser.parse_args()
+    
+    # Handle help
+    if args.help:
+        print_help()
+        sys.exit(0)
+    
+    # Handle book filter
+    book_filter = None
+    if args.book:
+        book_filter = normalize_book_name(args.book)
+        
+        if not book_filter:
+            # Try to find similar books
+            similar = find_similar_books(args.book)
+            if similar:
+                # Get the abbreviated form for the suggestion
+                abbrevs = [k for k, v in BOOK_ABBREVIATIONS.items() if v == similar]
+                short_form = min(abbrevs, key=len) if abbrevs else similar
+                print(f"'{args.book}' book doesn't exist, did you mean '{similar}' ({short_form})?")
+            else:
+                print(f"'{args.book}' book is not present in the Bible.")
+            sys.exit(1)
+    
+    # Get and display verse
+    verse = get_random_verse(FILE_PATH, book_filter)
+    
+    if verse:
+        print(verse)
+    else:
+        print(f"No verses found for the book: {book_filter}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    print(get_random_verse(FILE_PATH))
+    main()

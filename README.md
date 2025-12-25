@@ -1,6 +1,6 @@
 # bible-cli
 
-Clone, run the installer, and use the `bible` command.
+Clone, run the installer, and use the `bible` command. This project supports Linux, macOS and Windows.
 
 Clone the repo:
 
@@ -9,31 +9,24 @@ git clone https://github.com/dionjoshualobo/bible-cli.git
 cd bible-cli
 ```
 
-Run the installer:
+Linux / macOS
+--------------
 
-```
-./install.sh
-```
-
-If the installer is not executable, make it so:
+Run the installer from the repository root:
 
 ```
 chmod +x ./install.sh
 ./install.sh
 ```
 
-After installation run the `bible` command:
+The installer copies the `bible` script and `bible.xml` to `/usr/local/share/bible` and symlinks `/usr/local/bin/bible` so you can run `bible` from your shell.
 
-```
-bible
-```
-
-Enjoy!
+Note: The installer checks for `python3` or `python` on your PATH. If Python 3 is not found it will warn you at the end of the install. Please install Python 3 and re-run the installer (e.g. `sudo apt install python3` on Debian/Ubuntu, `brew install python` on macOS).
 
 Windows
 -------
 
-On Windows you can run the PowerShell installer which copies files into your `%LOCALAPPDATA%` and adds a small `bible.cmd` wrapper to your user PATH.
+On Windows, run the PowerShell installer which copies files into `%LOCALAPPDATA%\bible-cli`, creates a `bible.cmd` wrapper and (optionally) adds the install folder to your user PATH.
 
 Run in PowerShell from the repo directory:
 
@@ -41,4 +34,12 @@ Run in PowerShell from the repo directory:
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
 
-You may need to open a new terminal after installation for the PATH change to take effect.
+The Windows installer will create a `bible.cmd` wrapper that first tries the `python` command and falls back to the `py` launcher. If Python 3 is not found it will print a warning and instructions to install Python.
+
+After installation open a new terminal and run:
+
+```
+bible
+```
+
+Enjoy!

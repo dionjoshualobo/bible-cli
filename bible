@@ -78,12 +78,18 @@ BOOK_ABBREVIATIONS = {
     '1john': '1 John', '1jo': '1 John', '1jn': '1 John', '1 john': '1 John',
     '2john': '2 John', '2jo': '2 John', '2jn': '2 John', '2 john': '2 John',
     '3john': '3 John', '3jo': '3 John', '3jn': '3 John', '3 john': '3 John',
-    'jude': 'Jude', 'jd': 'Jude', 'jud': 'Jude',
+    'jude': 'Jude', 'jd': 'Jude',
     'rev': 'Revelation', 're': 'Revelation', 'revelation': 'Revelation',
 }
 
 # Pre-computed list for fuzzy matching
 ALL_BOOK_SEARCH_TERMS = list(BOOK_ABBREVIATIONS.keys()) + sorted(list(set(BOOK_ABBREVIATIONS.values())))
+
+# Reverse mapping from book name to shortest abbreviation
+BOOK_TO_SHORT_ABBREV = {}
+for abbrev, book in BOOK_ABBREVIATIONS.items():
+    if book not in BOOK_TO_SHORT_ABBREV or len(abbrev) < len(BOOK_TO_SHORT_ABBREV[book]):
+        BOOK_TO_SHORT_ABBREV[book] = abbrev
 
 def get_book_names():
     """Get list of unique book names."""
@@ -240,7 +246,7 @@ def print_help():
         ('1 John', '1Jo, 1Jn, 1 John'),
         ('2 John', '2Jo, 2Jn, 2 John'),
         ('3 John', '3Jo, 3Jn, 3 John'),
-        ('Jude', 'Jd, Jud'),
+        ('Jude', 'Jd'),
         ('Revelation', 'Rev, Re'),
     ]
     
@@ -271,9 +277,8 @@ def main():
             # Try to find similar books
             similar = find_similar_books(args.book)
             if similar:
-                # Get the abbreviated form for the suggestion
-                abbrevs = [k for k, v in BOOK_ABBREVIATIONS.items() if v == similar]
-                short_form = min(abbrevs, key=len) if abbrevs else similar
+                # Get the abbreviated form for the suggestion using pre-computed mapping
+                short_form = BOOK_TO_SHORT_ABBREV.get(similar, similar)
                 print(f"'{args.book}' book doesn't exist, did you mean '{similar}' ({short_form})?")
             else:
                 print(f"'{args.book}' book is not present in the Bible.")

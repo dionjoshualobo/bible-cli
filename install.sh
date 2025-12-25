@@ -7,7 +7,7 @@ BIN_LINK="/usr/local/bin/bible"
 echo "Installing bible CLI..."
 
 sudo mkdir -p "$INSTALL_DIR"
- sudo cp bible bible.xml books.py "$INSTALL_DIR"
+ sudo cp bible bible.xml books.py updater.py "$INSTALL_DIR"
 sudo chmod +x "$INSTALL_DIR/bible"
 sudo ln -sf "$INSTALL_DIR/bible" "$BIN_LINK"
 

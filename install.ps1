@@ -23,6 +23,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 Copy-Item -Path (Join-Path $scriptDir 'bible') -Destination (Join-Path $installDir 'bible.py') -Force
 Copy-Item -Path (Join-Path $scriptDir 'bible.xml') -Destination $installDir -Force
 Copy-Item -Path (Join-Path $scriptDir 'books.py') -Destination $installDir -Force
+Copy-Item -Path (Join-Path $scriptDir 'updater.py') -Destination $installDir -Force
 
 # Create a CMD wrapper to allow running `bible` from cmd/PowerShell.
 # The wrapper will try 'python' first, then the 'py' launcher.

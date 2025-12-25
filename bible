@@ -112,12 +112,13 @@ def print_help():
     print("  bible --book=BOOK  Get a random verse from a specific book")
     print("  bible -h           Show this short help message")
     print("  bible --list-books Show the full list of books and their abbreviations")
+    print("  bible --update       Fetch latest code from GitHub and run installer")
     print("\nExamples:")
     print("  bible -b Genesis")
     print("  bible -b Gen")
     print("  bible --book=Psalms")
     print("  bible -b Ps")
-    print("  bible --update       Fetch latest code from GitHub and run installer")
+    
 
 def main():
     parser = argparse.ArgumentParser(

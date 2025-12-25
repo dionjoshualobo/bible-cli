@@ -2,18 +2,74 @@
 
 import xml.etree.ElementTree as ET
 import random
+import argparse
+import sys
 from pathlib import Path
+from difflib import get_close_matches
+from books import BOOK_ABBREVIATIONS, OT_BOOKS, NT_BOOKS
 
 BASE_DIR = Path(__file__).resolve().parent
 FILE_PATH = BASE_DIR / "bible.xml"
 
-def get_random_verse(file_path):
+# Create reverse mapping from abbreviation to book name
+ABBREV_TO_BOOK = {}
+for book, abbrevs in BOOK_ABBREVIATIONS.items():
+    for abbrev in abbrevs:
+        ABBREV_TO_BOOK[abbrev] = book
+
+# Pre-computed list for fuzzy matching
+ALL_BOOK_SEARCH_TERMS = list(ABBREV_TO_BOOK.keys()) + list(BOOK_ABBREVIATIONS.keys())
+
+# Mapping from book name to shortest abbreviation
+BOOK_TO_SHORT_ABBREV = {}
+for book, abbrevs in BOOK_ABBREVIATIONS.items():
+    BOOK_TO_SHORT_ABBREV[book] = min(abbrevs, key=len)
+
+def normalize_book_name(book_input):
+    """Normalize and find the full book name from user input."""
+    if not book_input:
+        return None
+    
+    # Normalize input: lowercase and remove spaces
+    normalized = book_input.lower().strip().replace(' ', '')
+    
+    # Direct lookup in reverse mapping
+    if normalized in ABBREV_TO_BOOK:
+        return ABBREV_TO_BOOK[normalized]
+    
+    return None
+
+def find_similar_books(book_input):
+    """Find similar book names for suggestions."""
+    # Normalize input
+    normalized = book_input.lower().strip()
+    
+    # Get close matches
+    matches = get_close_matches(normalized, ALL_BOOK_SEARCH_TERMS, n=1, cutoff=0.6)
+    
+    if matches:
+        match = matches[0]
+        # Check if it's an abbreviation
+        if match in ABBREV_TO_BOOK:
+            return ABBREV_TO_BOOK[match]
+        # Otherwise it's already a book name
+        return match
+    
+    return None
+
+def get_verses(file_path, book_filter=None):
+    """Get verses, optionally filtered by book."""
     tree = ET.parse(file_path)
     root = tree.getroot()
 
     verses = []
     for book in root.findall('b'):
         book_name = book.get('n')
+        
+        # Apply book filter if specified
+        if book_filter and book_name != book_filter:
+            continue
+            
         for chapter in book.findall('c'):
             chapter_num = chapter.get('n')
             for verse in chapter.findall('v'):
@@ -22,9 +78,91 @@ def get_random_verse(file_path):
                     verses.append(
                         (book_name, chapter_num, verse_num, verse.text.strip())
                     )
+    
+    return verses
 
+def get_random_verse(file_path, book_filter=None):
+    """Get a random verse, optionally from a specific book."""
+    verses = get_verses(file_path, book_filter)
+    
+    if not verses:
+        return None
+    
     book, ch, v, text = random.choice(verses)
     return f"{book} {ch}:{v} — {text}"
 
+def print_book_list():
+    """Print the full list of books and their abbreviations."""
+    print("Available Books and Their Abbreviations:")
+    print("\nOld Testament:")
+    for book, abbrev in OT_BOOKS:
+        print(f"  {book:<20} ({abbrev})")
+
+    print("\nNew Testament:")
+    for book, abbrev in NT_BOOKS:
+        print(f"  {book:<20} ({abbrev})")
+
+
+def print_help():
+    """Print a short help message that points users to `--list-books` for details."""
+    print("Bible CLI - Get random verses from the Bible")
+    print("\nUsage:")
+    print("  bible              Get a random verse from any book")
+    print("  bible -b BOOK      Get a random verse from a specific book")
+    print("  bible --book=BOOK  Get a random verse from a specific book")
+    print("  bible -h           Show this short help message")
+    print("  bible --list-books Show the full list of books and their abbreviations")
+    print("\nExamples:")
+    print("  bible -b Genesis")
+    print("  bible -b Gen")
+    print("  bible --book=Psalms")
+    print("  bible -b Ps")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Bible CLI - Get random verses from the Bible',
+        add_help=False  # We'll handle help ourselves
+    )
+    parser.add_argument('-b', '--book', type=str, help='Specify a book to get verses from')
+    parser.add_argument('-h', '--help', action='store_true', help='Show help message')
+    parser.add_argument('--list-books', action='store_true', help='List all books and their abbreviations')
+    
+    args = parser.parse_args()
+    
+    # Handle help
+    if args.help:
+        print_help()
+        sys.exit(0)
+
+    # Handle list-books
+    if args.list_books:
+        print_book_list()
+        sys.exit(0)
+    
+    # Handle book filter
+    book_filter = None
+    if args.book:
+        book_filter = normalize_book_name(args.book)
+        
+        if not book_filter:
+            # Try to find similar books
+            similar = find_similar_books(args.book)
+            if similar:
+                # Get the abbreviated form for the suggestion using pre-computed mapping
+                short_form = BOOK_TO_SHORT_ABBREV.get(similar, similar)
+                print(f"'{args.book}' book doesn't exist, did you mean '{similar}' ({short_form})?")
+            else:
+                print(f"'{args.book}' book is not present in the Bible.")
+            sys.exit(1)
+    
+    # Get and display verse
+    verse = get_random_verse(FILE_PATH, book_filter)
+    
+    if verse:
+        print(verse)
+    else:
+        print(f"No verses found for the book: {book_filter}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    print(get_random_verse(FILE_PATH))
+    main()

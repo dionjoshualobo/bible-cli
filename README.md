@@ -43,3 +43,49 @@ bible
 ```
 
 Enjoy!
+
+## Tags
+
+### `-b` / `--book` - Specify a Book
+
+Get a random verse from a specific book of the Bible.
+
+**Usage:**
+```
+bible -b BOOK
+bible --book BOOK
+bible --book=BOOK
+```
+
+**Examples:**
+```
+bible -b Genesis
+bible -b Gen
+bible --book=Psalms
+bible --book Ps
+bible -b "1 Corinthians"
+bible -b 1Cor
+```
+
+You can use either the full book name or the standard abbreviation. For a complete list of books and their abbreviations, run:
+
+```
+bible -h
+```
+
+### `-h` / `--help` - Show Help
+
+Display help information including all available book names and their standard abbreviations.
+
+**Usage:**
+```
+bible -h
+bible --help
+```
+
+This will show:
+- Usage examples
+- Complete list of Old Testament books and abbreviations
+- Complete list of New Testament books and abbreviations
+
+**Note:** If you enter an incorrect book name, the CLI will suggest the closest matching book name if it can find one.

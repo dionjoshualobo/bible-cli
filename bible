@@ -91,10 +91,6 @@ for abbrev, book in BOOK_ABBREVIATIONS.items():
     if book not in BOOK_TO_SHORT_ABBREV or len(abbrev) < len(BOOK_TO_SHORT_ABBREV[book]):
         BOOK_TO_SHORT_ABBREV[book] = abbrev
 
-def get_book_names():
-    """Get list of unique book names."""
-    return sorted(list(set(BOOK_ABBREVIATIONS.values())))
-
 def normalize_book_name(book_input):
     """Normalize and find the full book name from user input."""
     if not book_input:

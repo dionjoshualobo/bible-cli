@@ -4,6 +4,33 @@ Clone, run the installer, and use the `bible` command. This project supports Lin
 
 Clone the repo:
 
+# bible-cli
+
+A tiny CLI that prints random Bible verses from `bible.xml`.
+
+Quick usage:
+
+	- Run: `bible` (prints a random verse)
+	- List books: `bible --list-books`
+	- Get a verse from a book: `bible -b Genesis`
+
+Updating:
+
+	- Check for updates (dry-run): `bible --check-update`
+	- Download & install latest: `bible --update`
+
+Install (Linux/macOS):
+
+	./install.sh
+
+Install (Windows):
+
+	powershell -ExecutionPolicy Bypass -File .\install.ps1
+
+Clone, run the installer, and use the `bible` command. This project supports Linux, macOS and Windows.
+
+Clone the repo:
+
 ```
 git clone https://github.com/dionjoshualobo/bible-cli.git
 cd bible-cli

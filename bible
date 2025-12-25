@@ -117,6 +117,7 @@ def print_help():
     print("  bible -b Gen")
     print("  bible --book=Psalms")
     print("  bible -b Ps")
+    print("  bible --update       Fetch latest code from GitHub and run installer")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -126,6 +127,8 @@ def main():
     parser.add_argument('-b', '--book', type=str, help='Specify a book to get verses from')
     parser.add_argument('-h', '--help', action='store_true', help='Show help message')
     parser.add_argument('--list-books', action='store_true', help='List all books and their abbreviations')
+    parser.add_argument('--update', action='store_true', help='Fetch latest code and run installer for your platform')
+    parser.add_argument('--check-update', action='store_true', help='Check whether an update is available (dry-run)')
     
     args = parser.parse_args()
     
@@ -138,6 +141,35 @@ def main():
     if args.list_books:
         print_book_list()
         sys.exit(0)
+
+    # Handle update via separate updater module
+    if args.update:
+        try:
+            from updater import perform_update
+        except Exception as e:
+            print('Update support not available (missing updater module).', e)
+            sys.exit(1)
+
+        rc = perform_update(BASE_DIR)
+        sys.exit(0 if rc == 0 else 1)
+
+    if args.check_update:
+        try:
+            from updater import perform_update
+        except Exception as e:
+            print('Update support not available (missing updater module).', e)
+            sys.exit(1)
+
+        rc = perform_update(BASE_DIR, check_only=True)
+        # Use exit codes: 0 == up-to-date, 2 == update available, 1 == error/cannot determine
+        if rc == 0:
+            sys.exit(0)
+        elif rc == 2:
+            # Indicate update available but do not perform it
+            print('An update is available. Run `bible --update` to install it.')
+            sys.exit(2)
+        else:
+            sys.exit(1)
     
     # Handle book filter
     book_filter = None

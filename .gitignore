@@ -1,0 +1,27 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Env
+.env
+.venv/
+venv/
+
+# Editor directories
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Node
+node_modules/
+
+# Coverage
+.coverage
+coverage.xml

@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import xml.etree.ElementTree as ET
+import random
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+FILE_PATH = BASE_DIR / "bible.xml"
+
+def get_random_verse(file_path):
+    tree = ET.parse(file_path)
+    root = tree.getroot()
+
+    verses = []
+    for book in root.findall('b'):
+        book_name = book.get('n')
+        for chapter in book.findall('c'):
+            chapter_num = chapter.get('n')
+            for verse in chapter.findall('v'):
+                verse_num = verse.get('n')
+                if verse.text:
+                    verses.append(
+                        (book_name, chapter_num, verse_num, verse.text.strip())
+                    )
+
+    book, ch, v, text = random.choice(verses)
+    return f"{book} {ch}:{v} — {text}"
+
+if __name__ == "__main__":
+    print(get_random_verse(FILE_PATH))

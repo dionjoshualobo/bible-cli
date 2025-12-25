@@ -78,75 +78,40 @@ BOOK_ABBREVIATIONS = {
     'Revelation': ['rev', 're', 'revelation'],
 }
 
-# Printable lists used by the help output (keeps ordering and nicer short forms)
-OT_BOOKS = [
-    ('Genesis', 'Gen, Gn'),
-    ('Exodus', 'Ex, Exo, Exod'),
-    ('Leviticus', 'Lev, Lv'),
-    ('Numbers', 'Num, Nm, Numb'),
-    ('Deuteronomy', 'Deut, Dt, Deu'),
-    ('Joshua', 'Josh, Js, Jos'),
-    ('Judges', 'Judg, Jud, Jdg'),
-    ('Ruth', 'Rt, Rut'),
-    ('1 Samuel', '1Sam, 1Sm, 1 Sam'),
-    ('2 Samuel', '2Sam, 2Sm, 2 Sam'),
-    ('1 Kings', '1Kgs, 1Ki, 1 Kgs'),
-    ('2 Kings', '2Kgs, 2Ki, 2 Kgs'),
-    ('1 Chronicles', '1Chr, 1Ch, 1 Chr'),
-    ('2 Chronicles', '2Chr, 2Ch, 2 Chr'),
-    ('Ezra', 'Ezr'),
-    ('Nehemiah', 'Neh, Ne'),
-    ('Esther', 'Esth, Et, Est'),
-    ('Job', 'Job'),
-    ('Psalms', 'Ps, Psa, Psalm'),
-    ('Proverbs', 'Prov, Prv, Pro'),
-    ('Ecclesiastes', 'Eccl, Ec, Ecc'),
-    ('Song of Solomon', 'Song, So, SoS'),
-    ('Isaiah', 'Isa, Is'),
-    ('Jeremiah', 'Jer, Jr'),
-    ('Lamentations', 'Lam, Lm'),
-    ('Ezekiel', 'Ezek, Ez, Eze'),
-    ('Daniel', 'Dan, Dn'),
-    ('Hosea', 'Hos, Ho'),
-    ('Joel', 'Jl, Joe'),
-    ('Amos', 'Am'),
-    ('Obadiah', 'Obad, Ob, Oba'),
-    ('Jonah', 'Jon'),
-    ('Micah', 'Mic, Mi'),
-    ('Nahum', 'Nah, Na'),
-    ('Habakkuk', 'Hab, Hk'),
-    ('Zephaniah', 'Zeph, Zp, Zep'),
-    ('Haggai', 'Hag, Hg'),
-    ('Zechariah', 'Zech, Zc, Zec'),
-    ('Malachi', 'Mal, Ml'),
+# To avoid duplicating book names/ordering, we keep explicit testament
+# ordering here and derive the printable abbreviations from
+# `BOOK_ABBREVIATIONS` (the single source of truth).
+OT_ORDER = [
+    'Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges',
+    'Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles',
+    'Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes',
+    'Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel',
+    'Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk',
+    'Zephaniah','Haggai','Zechariah','Malachi',
 ]
 
-NT_BOOKS = [
-    ('Matthew', 'Matt, Mt, Mat'),
-    ('Mark', 'Mk, Mar'),
-    ('Luke', 'Lk, Luk'),
-    ('John', 'Jo, Joh, Jn'),
-    ('Acts', 'Act, Ac'),
-    ('Romans', 'Rom, Rm'),
-    ('1 Corinthians', '1Cor, 1Co, 1 Cor'),
-    ('2 Corinthians', '2Cor, 2Co, 2 Cor'),
-    ('Galatians', 'Gal, Gl'),
-    ('Ephesians', 'Eph'),
-    ('Philippians', 'Phil, Ph, Php'),
-    ('Colossians', 'Col, Cl'),
-    ('1 Thessalonians', '1Thess, 1Ts, 1Th, 1 Thess'),
-    ('2 Thessalonians', '2Thess, 2Ts, 2Th, 2 Thess'),
-    ('1 Timothy', '1Tim, 1Tm, 1Ti, 1 Tim'),
-    ('2 Timothy', '2Tim, 2Tm, 2Ti, 2 Tim'),
-    ('Titus', 'Tt, Tit'),
-    ('Philemon', 'Philem, Phm, Phlm'),
-    ('Hebrews', 'Heb, Hb'),
-    ('James', 'Jm, Jas, Jam'),
-    ('1 Peter', '1Pet, 1Pe, 1Pt, 1 Pet'),
-    ('2 Peter', '2Pet, 2Pe, 2Pt, 2 Pet'),
-    ('1 John', '1Jo, 1Jn, 1 John'),
-    ('2 John', '2Jo, 2Jn, 2 John'),
-    ('3 John', '3Jo, 3Jn, 3 John'),
-    ('Jude', 'Jd'),
-    ('Revelation', 'Rev, Re'),
+NT_ORDER = [
+    'Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians',
+    'Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians',
+    '1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter',
+    '1 John','2 John','3 John','Jude','Revelation',
 ]
+
+
+def _format_abbrevs(name, max_items=3):
+    """Return a printable abbreviation string for a book name.
+
+    Uses the first `max_items` abbreviations from `BOOK_ABBREVIATIONS`
+    and title-cases them for display.
+    """
+    abbrevs = BOOK_ABBREVIATIONS.get(name, [])
+    if not abbrevs:
+        return ''
+    # pick up to max_items and title-case them for readability
+    picked = abbrevs[:max_items]
+    return ', '.join(a.title() for a in picked)
+
+
+# Derived printable lists for help output
+OT_BOOKS = [(name, _format_abbrevs(name)) for name in OT_ORDER]
+NT_BOOKS = [(name, _format_abbrevs(name)) for name in NT_ORDER]

@@ -91,20 +91,9 @@ def get_random_verse(file_path, book_filter=None):
     book, ch, v, text = random.choice(verses)
     return f"{book} {ch}:{v} — {text}"
 
-def print_help():
-    """Print help message with book names and abbreviations."""
-    print("Bible CLI - Get random verses from the Bible")
-    print("\nUsage:")
-    print("  bible              Get a random verse from any book")
-    print("  bible -b BOOK      Get a random verse from a specific book")
-    print("  bible --book=BOOK  Get a random verse from a specific book")
-    print("  bible -h           Show this help message")
-    print("\nExamples:")
-    print("  bible -b Genesis")
-    print("  bible -b Gen")
-    print("  bible --book=Psalms")
-    print("  bible -b Ps")
-    print("\nAvailable Books and Their Abbreviations:")
+def print_book_list():
+    """Print the full list of books and their abbreviations."""
+    print("Available Books and Their Abbreviations:")
     print("\nOld Testament:")
     for book, abbrev in OT_BOOKS:
         print(f"  {book:<20} ({abbrev})")
@@ -113,6 +102,22 @@ def print_help():
     for book, abbrev in NT_BOOKS:
         print(f"  {book:<20} ({abbrev})")
 
+
+def print_help():
+    """Print a short help message that points users to `--list-books` for details."""
+    print("Bible CLI - Get random verses from the Bible")
+    print("\nUsage:")
+    print("  bible              Get a random verse from any book")
+    print("  bible -b BOOK      Get a random verse from a specific book")
+    print("  bible --book=BOOK  Get a random verse from a specific book")
+    print("  bible -h           Show this short help message")
+    print("  bible --list-books Show the full list of books and their abbreviations")
+    print("\nExamples:")
+    print("  bible -b Genesis")
+    print("  bible -b Gen")
+    print("  bible --book=Psalms")
+    print("  bible -b Ps")
+
 def main():
     parser = argparse.ArgumentParser(
         description='Bible CLI - Get random verses from the Bible',
@@ -120,12 +125,18 @@ def main():
     )
     parser.add_argument('-b', '--book', type=str, help='Specify a book to get verses from')
     parser.add_argument('-h', '--help', action='store_true', help='Show help message')
+    parser.add_argument('--list-books', action='store_true', help='List all books and their abbreviations')
     
     args = parser.parse_args()
     
     # Handle help
     if args.help:
         print_help()
+        sys.exit(0)
+
+    # Handle list-books
+    if args.list_books:
+        print_book_list()
         sys.exit(0)
     
     # Handle book filter

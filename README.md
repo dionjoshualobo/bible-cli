@@ -16,7 +16,6 @@ Quick usage:
 
 Updating:
 
-	- Check for updates (dry-run): `bible --check-update`
 	- Download & install latest: `bible --update`
 
 Install (Linux/macOS):

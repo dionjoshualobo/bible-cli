@@ -73,7 +73,39 @@ def perform_update(base_dir: Path, check_only: bool = False) -> int:
 
     # Not a git repo: either check or download+install
     if check_only:
-        print('Not a git repository; cannot reliably check update status for non-git installs.')
+        # Try to read install metadata (COMMIT + ORIGIN) written by installers.
+        commit_file = base_dir / 'COMMIT'
+        origin_file = base_dir / 'ORIGIN'
+        if commit_file.exists() and origin_file.exists():
+            try:
+                origin = origin_file.read_text().strip()
+                local_commit = commit_file.read_text().strip()
+            except Exception:
+                print('Failed to read install metadata files.')
+                return 1
+
+            # Prefer using `git ls-remote` if git is available to query remote HEAD
+            if shutil.which('git'):
+                try:
+                    out = subprocess.check_output(['git', 'ls-remote', origin, 'HEAD'], stderr=subprocess.STDOUT)
+                    # Output is like: '<sha>\tHEAD'
+                    remote_sha = out.split()[0].decode('utf-8').strip()
+                except Exception as e:
+                    print('Failed to query remote repository with git ls-remote:', e)
+                    return 1
+
+                if local_commit != remote_sha:
+                    print('Update available: installed commit differs from remote HEAD.')
+                    return 2
+                else:
+                    print('Up-to-date: installed commit matches remote HEAD.')
+                    return 0
+            else:
+                print('git is not available to query remote. Cannot check updates for non-git installs.')
+                return 1
+
+        # No install metadata available — fall back to telling the user how to update
+        print('Not a git repository and no install metadata found; cannot reliably check update status for non-git installs.')
         print(f"You can run the updater to download the latest snapshot: {REPO_ZIP_URL}")
         return 1
 

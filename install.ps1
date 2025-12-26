@@ -68,3 +68,26 @@ if (-not $hasPython) {
 }
 
 Write-Host "Installation complete. Open a new terminal and run: bible"
+
+# If this installer was run from a git clone, attempt to capture commit and origin
+try {
+  $gitPresent = (Get-Command git -ErrorAction SilentlyContinue) -ne $null
+} catch {
+  $gitPresent = $false
+}
+
+if ($gitPresent -and (Test-Path (Join-Path $scriptDir '.git'))) {
+  try {
+    $commit = & git -C $scriptDir rev-parse --verify HEAD 2>$null
+  } catch {
+    $commit = $null
+  }
+  try {
+    $origin = & git -C $scriptDir config --get remote.origin.url 2>$null
+  } catch {
+    $origin = $null
+  }
+
+  if ($commit) { Set-Content -Path (Join-Path $installDir 'COMMIT') -Value $commit -Encoding ASCII }
+  if ($origin) { Set-Content -Path (Join-Path $installDir 'ORIGIN') -Value $origin -Encoding ASCII }
+}

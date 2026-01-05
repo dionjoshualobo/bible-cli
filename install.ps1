@@ -21,7 +21,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Copy the main script as bible.py (Windows-friendly name)
 Copy-Item -Path (Join-Path $scriptDir 'bible') -Destination (Join-Path $installDir 'bible.py') -Force
-Copy-Item -Path (Join-Path $scriptDir 'bible.xml') -Destination $installDir -Force
+Copy-Item -Path (Join-Path $scriptDir 'ESV.xml') -Destination $installDir -Force
 Copy-Item -Path (Join-Path $scriptDir 'books.py') -Destination $installDir -Force
 Copy-Item -Path (Join-Path $scriptDir 'updater.py') -Destination $installDir -Force
 

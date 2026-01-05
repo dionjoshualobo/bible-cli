@@ -9,7 +9,7 @@ from difflib import get_close_matches
 from books import BOOK_ABBREVIATIONS, OT_BOOKS, NT_BOOKS
 
 BASE_DIR = Path(__file__).resolve().parent
-FILE_PATH = BASE_DIR / "bible.xml"
+FILE_PATH = BASE_DIR / "ESV.xml"
 
 # Create reverse mapping from abbreviation to book name
 ABBREV_TO_BOOK = {}

@@ -5,6 +5,7 @@ import random
 import argparse
 import sys
 from pathlib import Path
+from collections import deque
 from difflib import get_close_matches
 from books import BOOK_ABBREVIATIONS, OT_BOOKS, NT_BOOKS
 
@@ -52,10 +53,12 @@ def find_similar_books(book_input):
     
     return None
 
-def get_random_verse(file_path, book_filter=None):
-    """Get a random verse, optionally from a specific book, using Reservoir Sampling."""
-    count = 0
-    selected_verse = None
+def get_random_verses(file_path, count=1, book_filter=None):
+    """Get random consecutive verses, optionally from a specific book, using Reservoir Sampling."""
+    window = deque(maxlen=count)
+    selected_window = None
+    valid_window_count = 0
+    all_verses_if_short = []
     
     context = ET.iterparse(file_path, events=('start', 'end'))
     current_book = None
@@ -70,14 +73,25 @@ def get_random_verse(file_path, book_filter=None):
         elif event == 'end':
             if elem.tag == 'v':
                 if (not book_filter or current_book == book_filter) and elem.text:
-                    count += 1
-                    if random.randrange(count) == 0:
-                        selected_verse = f"{current_book} {current_chapter}:{elem.get('n')} — {elem.text.strip()}"
+                    verse_str = f"{current_book} {current_chapter}:{elem.get('n')} — {elem.text.strip()}"
+                    
+                    if len(all_verses_if_short) < count:
+                        all_verses_if_short.append(verse_str)
+                    
+                    window.append(verse_str)
+                    if len(window) == count:
+                        valid_window_count += 1
+                        if random.randrange(valid_window_count) == 0:
+                            selected_window = list(window)
+                            
                 elem.clear()
             elif elem.tag in ('c', 'b'):
                 elem.clear()
                 
-    return selected_verse
+    if valid_window_count == 0:
+        return all_verses_if_short
+        
+    return selected_window
 
 def print_book_list():
     """Print the full list of books and their abbreviations."""
@@ -96,16 +110,16 @@ def print_help():
     print("Bible CLI - Get random verses from the Bible")
     print("\nUsage:")
     print("  bible              Get a random verse from any book")
-    print("  bible [BOOK]       Get a random verse from a specific book")
+    print("  bible [BOOK] [N]   Get N random consecutive verses (default 1)")
     print("  bible -b BOOK      Get a random verse from a specific book")
-    print("  bible --book=BOOK  Get a random verse from a specific book")
+    print("  bible -n COUNT     Get N random consecutive verses")
     print("  bible -h           Show this short help message")
     print("  bible --list-books Show the full list of books and their abbreviations")
     print("  bible --update     Fetch latest code from GitHub and run installer")
     print("\nExamples:")
     print("  bible Genesis")
-    print("  bible 1 Kings")
-    print("  bible -b Gen")
+    print("  bible 1 Kings 5")
+    print("  bible -b Gen -n 3")
     print("  bible --book=Psalms")
     
 
@@ -116,6 +130,7 @@ def main():
     )
     parser.add_argument('positional_book', nargs='*', help=argparse.SUPPRESS)
     parser.add_argument('-b', '--book', nargs='+', help='Specify a book to get verses from')
+    parser.add_argument('-n', '--count', type=int, default=1, help='Number of consecutive verses to retrieve')
     parser.add_argument('-h', '--help', action='store_true', help='Show help message')
     parser.add_argument('--list-books', action='store_true', help='List all books and their abbreviations')
     parser.add_argument('--update', action='store_true', help='Fetch latest code and run installer for your platform')
@@ -161,6 +176,17 @@ def main():
             sys.exit(2)
         else:
             sys.exit(1)
+
+    # Handle count
+    count = args.count
+    if args.positional_book:
+        last_arg = args.positional_book[-1]
+        if last_arg.isdigit():
+            count = int(args.positional_book.pop())
+            
+    if count < 1:
+        print("Error: Verse count must be a positive integer.")
+        sys.exit(1)
     
     # Handle book filter
     input_book_parts = args.book or []
@@ -183,13 +209,17 @@ def main():
                 print(f"'{raw_book_str}' book is not present in the Bible.")
             sys.exit(1)
     
-    # Get and display verse
-    verse = get_random_verse(FILE_PATH, book_filter)
+    # Get and display verses
+    verses = get_random_verses(FILE_PATH, count, book_filter)
     
-    if verse:
-        print(verse)
+    if verses:
+        for verse in verses:
+            print(verse)
     else:
-        print(f"No verses found for the book: {book_filter}")
+        if book_filter:
+            print(f"No verses found for the book: {book_filter}")
+        else:
+            print("No verses found.")
         sys.exit(1)
 
 if __name__ == "__main__":

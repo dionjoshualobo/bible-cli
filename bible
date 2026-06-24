@@ -73,12 +73,12 @@ def get_random_verses(file_path, count=1, book_filter=None):
         elif event == 'end':
             if elem.tag == 'v':
                 if (not book_filter or current_book == book_filter) and elem.text:
-                    verse_str = f"{current_book} {current_chapter}:{elem.get('n')} — {elem.text.strip()}"
+                    verse_data = (current_book, current_chapter, elem.get('n'), elem.text.strip())
                     
                     if len(all_verses_if_short) < count:
-                        all_verses_if_short.append(verse_str)
+                        all_verses_if_short.append(verse_data)
                     
-                    window.append(verse_str)
+                    window.append(verse_data)
                     if len(window) == count:
                         valid_window_count += 1
                         if random.randrange(valid_window_count) == 0:
@@ -213,8 +213,36 @@ def main():
     verses = get_random_verses(FILE_PATH, count, book_filter)
     
     if verses:
-        for verse in verses:
-            print(verse)
+        if len(verses) == 1:
+            # Single verse: old format
+            book, ch, v, text = verses[0]
+            print(f"{book} {ch}:{v} — {text}")
+        else:
+            # Multiple verses: paragraph format
+            first_book, first_ch, first_v, _ = verses[0]
+            last_book, last_ch, last_v, _ = verses[-1]
+            
+            if first_book == last_book:
+                if first_ch == last_ch:
+                    header = f"{first_book} {first_ch}:{first_v}-{last_v}"
+                else:
+                    header = f"{first_book} {first_ch}:{first_v} - {last_ch}:{last_v}"
+            else:
+                header = f"{first_book} {first_ch}:{first_v} - {last_book} {last_ch}:{last_v}"
+                
+            print(header)
+            
+            parts = []
+            for book, ch, v, text in verses:
+                if first_book != last_book:
+                    label = f"[{book} {ch}:{v}]"
+                elif first_ch != last_ch:
+                    label = f"[{ch}:{v}]"
+                else:
+                    label = f"[{v}]"
+                parts.append(f"{label} {text}")
+                
+            print(" ".join(parts))
     else:
         if book_filter:
             print(f"No verses found for the book: {book_filter}")

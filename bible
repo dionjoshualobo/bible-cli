@@ -240,7 +240,7 @@ def main():
                     label = f"[{ch}:{v}]"
                 else:
                     label = f"[{v}]"
-                parts.append(f"{label} {text}")
+                parts.append(f"{label} {text}\n")
                 
             print(" ".join(parts))
     else:
